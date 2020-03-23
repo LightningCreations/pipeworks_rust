@@ -1,0 +1,3 @@
+[submodule "libpipeworks"]
+	path = libpipeworks
+	url = https://github.com/LightningCreations/libpipeworks.git

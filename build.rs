@@ -1,10 +1,23 @@
 extern crate bindgen;
 
+extern crate cmake;
+
 use std::env;
 use std::path::PathBuf;
 
 fn main(){
     let out_path = PathBuf::from(env::var("OUT_DIR").unwrap());
+
+    if cfg!(feature="build_pipeworks"){
+        let dst = cmake::build("libpipeworks").join("lib/pipeworks");
+
+        println!("cargo:rustc-link-search=native={}", dst.display());
+        println!("cargo:rustc-link-lib=static=pipeworks");
+    }else{
+        println!("cargo:rustc-link-lib=pipeworks");
+    }
+
+
 
     println!("cargo:rerun-if-changed=libpipeworks/include/pipeworks/engine.h");
     println!("cargo:rerun-if-changed=libpipeworks/include/pipeworks/game.h");

@@ -1,6 +1,7 @@
 use crate::sys;
 use std::ptr::NonNull;
 use std::marker::PhantomData;
+use crate::engine::Engine;
 
 pub struct State(sys::pw_game_state);
 
@@ -8,7 +9,7 @@ pub const STATE_PRIME: State = State(sys::STATE_PRIME as sys::pw_game_state);
 
 pub struct Game<'a>{
     ptr: NonNull<sys::pw_game>,
-    lifetime: PhantomData<&'a dyn FnMut+Sync+Send+'a>
+    lifetime: PhantomData<&'a (dyn FnMut(&mut Engine<'a>,State)+Sync+Send+'a)>
 }
 
 impl<'a> Drop for Game<'a>{
@@ -19,8 +20,8 @@ impl<'a> Drop for Game<'a>{
     }
 }
 
-unsafe extern"C" fn load_state_callback<'a,F: FnMut(State) + Send + Sync + 'a>(state: sys::pw_game_state,userdata: *mut std::ffi::c_void){
-    (&mut *userdata.cast::<F>())(State(state))
+unsafe extern"C" fn load_state_callback<'a,F: FnMut(&mut Engine<'a>,State) + Send + Sync + 'a>(state: sys::pw_game_state,engine: *mut sys::pw_engine,userdata: *mut std::ffi::c_void){
+    (&mut *userdata.cast::<F>())(&mut Engine::from_ptr_unchecked(engine),State(state))
 }
 
 impl<'a> Game<'a>{
@@ -38,12 +39,11 @@ impl<'a> Game<'a>{
         ptr
     }
 
-    pub fn set_load_state<F: FnMut(State) + Send + Sync + 'a>(&mut self,callback: &'a mut F){
+    pub fn set_load_state<F: FnMut(&mut Engine<'a>,State) + Send + Sync + 'a>(&mut self,callback: &'a mut F){
         unsafe{
-            sys::pw_set_load_state(self.ptr.as_ptr(),&load_state_callback::<'a,F>,(callback as *mut F).cast());
+            sys::pw_set_load_state(self.ptr.as_ptr(),Some(load_state_callback::<'a,F>),(callback as *mut F).cast());
         }
     }
 }
 
 unsafe impl Send for Game<'_>{}
-unsafe impl Sync for Game<'_>{}

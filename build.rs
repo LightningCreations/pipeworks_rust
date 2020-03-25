@@ -11,12 +11,9 @@ fn main(){
     if cfg!(feature="build_pipeworks"){
         let dst = cmake::build("libpipeworks").join("lib/pipeworks");
 
-        println!("cargo:rustc-link-search=native={}", dst.display());
-        println!("cargo:rustc-link-lib=static=pipeworks");
-    }else{
-        println!("cargo:rustc-link-lib=pipeworks");
+        println!("cargo:rustc-link-search={}", dst.display());
     }
-
+    println!("cargo:rustc-link-lib=pipeworks");
 
 
     println!("cargo:rerun-if-changed=libpipeworks/include/pipeworks/engine.h");

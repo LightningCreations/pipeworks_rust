@@ -3,7 +3,7 @@ use std::ptr::NonNull;
 
 use crate::sys;
 use crate::game::Game;
-use crate::thing::Thing;
+use crate::thing::{Thing, ThingRef};
 
 pub struct Engine<'a>{
     ptr: NonNull<sys::pw_engine>,
@@ -51,9 +51,11 @@ impl<'a> Engine<'a>{
         }
     }
 
-    pub fn add_thing(&mut self,thing: Thing<'a>){
+    pub fn add_thing(&mut self,thing: Thing<'a>) -> ThingRef<'a> {
         unsafe{
-            sys::pw_engine_add_thing(self.ptr.as_ptr(),thing.into_inner())
+            let ptr = thing.into_inner();
+            sys::pw_engine_add_thing(self.ptr.as_ptr(),ptr);
+            ThingRef::from_ptr_unchecked(ptr)
         }
     }
 

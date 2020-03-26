@@ -23,6 +23,9 @@ impl<'a> Thing<'a>{
         std::mem::forget(self);
         ptr
     }
+    pub fn inner(&mut self) -> *mut sys::pw_thing{
+        self.ptr.as_ptr()
+    }
 }
 
 impl<'a> Drop for Thing<'a>{
@@ -34,35 +37,3 @@ impl<'a> Drop for Thing<'a>{
 }
 
 unsafe impl<'a> Send for Thing<'a>{}
-
-#[repr(C)]
-pub struct ThingRef<'a>{
-    ptr: NonNull<sys::pw_thing>,
-    r#ref: PhantomData<&'a mut Thing<'a>>
-}
-
-impl<'a> ThingRef<'a>{
-    pub unsafe fn from_ptr_unchecked(ptr: *mut sys::pw_thing) -> Self{
-        Self{ptr: NonNull::new_unchecked(ptr),r#ref: PhantomData}
-    }
-
-    // Shutup Clippy
-    // Box does this
-    pub fn into_inner(thingref{ptr,r#ref}: Self) -> *mut sys::pw_thing{
-        ptr.as_ptr()
-    }
-}
-
-impl<'a> Deref<Target> for ThingRef<'a>{
-    type Target = Thing<'a>;
-
-    fn deref(&self) -> &Self::Target {
-        unsafe{std::mem::transmute(self)}
-    }
-}
-
-impl<'a> DerefMut<Target> for ThingRef<'a>{
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        unsafe{std::mem::transmute(self)}
-    }
-}

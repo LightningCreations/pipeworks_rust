@@ -7,8 +7,8 @@ use crate::thing::{Thing, ThingRef};
 
 pub struct Engine<'a>{
     ptr: NonNull<sys::pw_engine>,
-    lifetime: PhantomData<crate::game::Game<'a>>,
-    things: PhantomData<crate::thing::Thing<'a>>
+    lifetime: PhantomData<&'a mut crate::game::Game<'a>>,
+    things: PhantomData<&'a mut crate::thing::Thing<'a>>
 }
 
 impl<'a> Drop for Engine<'a>{
@@ -29,33 +29,22 @@ impl<'a> Engine<'a>{
         Self{ptr: NonNull::new_unchecked(ptr),lifetime: PhantomData,things: PhantomData}
     }
 
-    pub fn stop(self){
-        unsafe{
-            sys::pw_stop(self.ptr.as_ptr())
-        }
-    }
+    pub fn stop(self){}
 
-    pub fn join(self){
-        unsafe{
-            sys::pw_join(self.ptr.as_ptr())
-        }
-    }
     pub fn into_inner(self) -> *mut sys::pw_engine{
         let ret = self.ptr.as_ptr();
         std::mem::forget(self);
         ret
     }
-    pub fn set_game(&mut self,game: Game<'a>) {
+    pub fn set_game(&mut self,game:&'a mut Game) {
         unsafe{
             sys::pw_set_game(self.ptr.as_ptr(),game.into_inner())
         }
     }
 
-    pub fn add_thing(&mut self,thing: Thing<'a>) -> ThingRef<'a> {
+    pub fn add_thing(&mut self,thing:&'a mut Thing){
         unsafe{
-            let ptr = thing.into_inner();
-            sys::pw_engine_add_thing(self.ptr.as_ptr(),ptr);
-            ThingRef::from_ptr_unchecked(ptr)
+            sys::pw_engine_add_thing(self.ptr.as_ptr(),thing.inner());
         }
     }
 

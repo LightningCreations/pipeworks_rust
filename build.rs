@@ -8,7 +8,7 @@ use std::path::PathBuf;
 fn main(){
     let out_path = PathBuf::from(env::var("OUT_DIR").unwrap());
 
-    if cfg!(feature="build_pipeworks"){
+    if cfg!(not(feature="system_pipeworks")){
         let dst = cmake::build("libpipeworks").join("lib/pipeworks");
 
         println!("cargo:rustc-link-search={}", dst.display());

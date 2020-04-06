@@ -1,58 +1,52 @@
-use std::marker::PhantomData;
-use std::ptr::NonNull;
-
 use crate::sys;
+use std::ptr::NonNull;
+use std::marker::{PhantomPinned, PhantomData};
+use core::mem;
 use crate::game::Game;
-use crate::thing::{Thing, ThingRef};
 
 pub struct Engine<'a>{
     ptr: NonNull<sys::pw_engine>,
-    lifetime: PhantomData<&'a mut crate::game::Game<'a>>,
-    things: PhantomData<&'a mut crate::thing::Thing<'a>>
+    game: PhantomData<Option<Game<'a>>>,
+    things: PhantomData<Option<Thing>>
 }
-
-impl<'a> Drop for Engine<'a>{
-    fn drop(&mut self) {
-        unsafe{
-            sys::pw_destroy_engine(self.ptr.as_ptr());
-        }
-    }
-}
-
 
 impl<'a> Engine<'a>{
     pub fn new() -> Option<Self>{
-        NonNull::new(unsafe{sys::pw_init_engine()})
-            .map(|ptr|Self{ptr,lifetime: PhantomData,things: PhantomData})
+        NonNull::new(sys::pw_init_engine()).map(|ptr|Self{ptr,game:PhantomData,things: PhantomData})
     }
+    ///
+    /// Constructs a new Engine from a raw pointer to a sys::pw_engine
+    /// The constructor is owning, there must not be more than one Engine object holding the same pointer.
+    ///
+    /// ptr shall have been obtained from a call to Engine::into_inner(),
+    ///  or sys::pw_init_engine(), and must not be destroyed
     pub unsafe fn from_ptr_unchecked(ptr: *mut sys::pw_engine) -> Self{
-        Self{ptr: NonNull::new_unchecked(ptr),lifetime: PhantomData,things: PhantomData}
+        Self{ptr: NonNull::new_unchecked(ptr),game: PhantomData,things: PhantomData}
     }
-
-    pub fn stop(self){}
 
     pub fn into_inner(self) -> *mut sys::pw_engine{
-        let ret = self.ptr.as_ptr();
-        std::mem::forget(self);
-        ret
-    }
-    pub fn set_game(&mut self,game:&'a mut Game) {
-        unsafe{
-            sys::pw_set_game(self.ptr.as_ptr(),game.into_inner())
-        }
+        let ptr = self.ptr.as_ptr();
+        mem::forget(self);
+        ptr
     }
 
-    pub fn add_thing(&mut self,thing:&'a mut Thing){
-        unsafe{
-            sys::pw_engine_add_thing(self.ptr.as_ptr(),thing.inner());
-        }
+    pub fn set_game(&mut self,game: Game<'a>){
+        sys::pw_set_game(self.ptr.as_ptr(),game.into_inner());
     }
 
-    pub fn clear_things(&mut self){
-        unsafe{
-            sys::pw_engine_clear_things(self.ptr.as_ptr())
-        }
+    pub fn take_game(&mut self)-> Option<Game<'a>>{
+        unsafe{Game::from_nullable_unchecked(sys::pw_engine_release_game(self.ptr.as_ptr()))}
     }
 }
 
-unsafe impl<'a> Send for Engine<'a>{}
+
+///
+/// Cleans up the engine
+/// Dropping an Engine
+impl Drop for Engine<'_>{
+    fn drop(&mut self) {
+        unsafe{
+            sys::pw_engine_destroy(self.ptr.as_ptr())
+        }
+    }
+}

@@ -1,3 +1,3 @@
 
-#include "libpipeworks/include/pipeworks/engine.h"
-#include "libpipeworks/include/pipeworks/pw-std.h"
+#include "libpipeworks/pipeworks/include/pipeworks/engine.h"
+#include "libpipeworks/pipeworks/include/pipeworks/pw-std.h"

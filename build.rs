@@ -25,6 +25,7 @@ fn main(){
         .whitelist_function("pw_[A-Za-z_]+")
         .whitelist_var("STATE_PRIME")
         .no_copy("pw_[A-Za-z_]+")
+        .clang_arg("-Ilibpipeworks/pipeworks/include")
         .generate()
         .expect("Unable to generate bindings");
 

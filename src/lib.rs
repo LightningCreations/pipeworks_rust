@@ -9,3 +9,12 @@ pub mod sys;
 pub mod engine;
 pub mod game;
 pub mod thing;
+
+#[cfg(test)]
+mod test{
+    #[test]
+    fn test_engine(){
+        let mut engine = engine::create_engine!();
+        
+    }
+}

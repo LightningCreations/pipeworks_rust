@@ -40,6 +40,8 @@ impl<'a> Engine<'a>{
 macro_rules! create_engine_ref{
     () => {
         let mut _engine = Engine::new();
+        // SAFETY:
+        // _engine cannot be accessed outside of the macro, because of hygine. 
         unsafe{Pin::new_unchecked(&mut _engine)}
     }
 }
@@ -53,6 +55,8 @@ unsafe impl Sync for Engine<'_>{}
 impl Drop for Engine<'_>{
     fn drop(&mut self) {
         unsafe{
+            /// SAFETY:
+            /// This is `drop`, so we are never moved from. 
             drop(Pin::new_unchecked(&mut *self).take_game());
             sys::pw_destroy_engine(self.ptr.as_ptr())
         }
